@@ -1,0 +1,6 @@
+{
+    "watch": ["modules", "views", "app.js"],
+    "ext": "js,njk,json",
+    "ignore": ["node_modules"]
+  }
+  

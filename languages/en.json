@@ -1,0 +1,19 @@
+{
+    "common": {
+      "welcome": "Welcome to the website"
+    },
+    "index": {
+      "title": "Home Page",
+      "desc": "This is the English index page",
+      "heading": "Welcome to the website"
+    },
+    "about": {
+      "title": "About",
+      "heading": "About Us"
+    },
+    "shipplan": {
+      "title": "Ship Plan",
+      "heading": "Shipping Plan Details"
+    }
+  }
+  

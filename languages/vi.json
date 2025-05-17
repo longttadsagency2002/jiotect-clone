@@ -1,0 +1,19 @@
+{
+    "common": {
+      "welcome": "Chào mừng bạn đến với website"
+    },
+    "index": {
+      "title": "Trang chủ",
+      "desc": "Đây là trang chính tiếng Việt",
+      "heading": "Chào mừng bạn đến với website"
+    },
+    "about": {
+      "title": "Giới thiệu",
+      "heading": "Về chúng tôi"
+    },
+    "shipplan": {
+      "title": "Kế hoạch tàu",
+      "heading": "Chi tiết kế hoạch vận chuyển"
+    }
+  }
+  
