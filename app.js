@@ -9,6 +9,7 @@ require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+app.use(express.static(path.join(__dirname, 'public')));
 
 const viewsPath = path.join(__dirname, 'theme');
 
@@ -33,14 +34,22 @@ Object.entries(routeMap.vi).forEach(([key, routePath]) => {
   const absolutePath = path.join(__dirname, 'theme', contentView);
   app.get(routePath, (req, res) => {
     if (fs.existsSync(absolutePath)) {
-      res.render("index", { lang: 'vi', t: translations.vi, contentView: contentView, key: key });
+      if(key === 'login' || key === 'register'){
+        res.render("auth", { lang: 'vi', t: translations.vi, contentView: contentView, key: key });
+      }else{
+        res.render("index", { lang: 'vi', t: translations.vi, contentView: contentView, key: key });
+      }
     } else {
       res.render("404", { lang: 'vi', t: translations.vi, contentView: contentView, key: key });
     }
   });
   app.get(`/vi${routePath === '/' ? '' : routePath}`, (req, res) => {
     if (fs.existsSync(absolutePath)) {
-      res.render("index", { lang: 'vi', t: translations.vi, contentView: contentView, key: key });
+      if(key === 'login' || key === 'register'){
+        res.render("auth", { lang: 'vi', t: translations.vi, contentView: contentView, key: key });
+      }else{
+        res.render("index", { lang: 'vi', t: translations.vi, contentView: contentView, key: key });
+      }
     } else {
       res.render("404", { lang: 'vi', t: translations.vi, contentView: contentView, key: key });
     }
@@ -53,7 +62,11 @@ Object.entries(routeMap.en).forEach(([key, routePath]) => {
   console.log(contentView);
   app.get(routePath, (req, res) => {
     if (fs.existsSync(absolutePath)) {
-      res.render("index", { lang: 'en', t: translations.en, contentView: contentView, key: key });
+      if(key === 'login' || key === 'register'){
+        res.render("auth", { lang: 'en', t: translations.en, contentView: contentView, key: key });
+      }else{
+        res.render("index", { lang: 'en', t: translations.en, contentView: contentView, key: key });
+      }
     } else {
       res.render("404", { lang: 'en', t: translations.en, contentView: contentView, key: key });
     }

@@ -1,0 +1,12 @@
+User-agent: *
+Disallow: /cms/
+Disallow: /config/
+Disallow: /node_modules/
+Disallow: /private/
+Disallow: /admin/
+Disallow: /.env
+Disallow: /backup/
+Allow: /
+
+# Add sitemap after you deploy your website
+# Sitemap: https://your-actual-domain.com/sitemap.xml
