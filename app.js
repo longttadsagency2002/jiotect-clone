@@ -5,6 +5,7 @@ const webRoutes = require('./routes');
 const { routeMap } = require('./config/routes');
 const fs = require('fs');
 const path = require('path');
+const { getModulesLanguages } = require('./utils/moduleScanner');
 require('dotenv').config();
 
 const app = express();
@@ -22,6 +23,11 @@ app.set('view engine', 'njk');
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+const modules = getModulesLanguages( 'modules');
+// console.log('modules:', JSON.stringify(modules, null, 2));
+
+console.log("modules : ", modules);
 
 const translations = {
   en: JSON.parse(fs.readFileSync(path.join(__dirname, 'languages/en.json'))),
