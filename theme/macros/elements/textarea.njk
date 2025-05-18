@@ -1,0 +1,67 @@
+{% macro textarea(id='editor', cols=80, rows=10, placeholder='Viết nội dung ở đây', ckeditor=true, height=300, toolbar=true, toolBarFull=true) %}
+  <textarea id="{{ id }}" cols="{{ cols }}" rows="{{ rows }}" placeholder="{{ placeholder }}"></textarea>
+
+  {% if ckeditor %}
+    <script>
+
+        CKEDITOR.addTemplates( 'default', {
+    // The name of sub folder which hold the shortcut preview images of the
+    // templates.
+    imagesPath: CKEDITOR.getUrl( CKEDITOR.plugins.getPath( 'templates' ) + 'templates/images/' ),
+
+    // The templates definitions.
+    templates: [ {
+        title: 'Image and Title',
+        image: 'template1.gif',
+        description: 'One main image with a title and text that surround the image.',
+        html: '<h3>' +
+            // Use src=" " so image is not filtered out by the editor as incorrect (src is required).
+            '<img src=" " alt="" style="margin-right: 10px" height="100" width="100" align="left" />' +
+            'Type the title here' +
+            '</h3>' +
+            '<p>' +
+            'Type the text here' +
+            '</p>'
+    } ]
+} );
+        
+      CKEDITOR.replace('{{ id }}', {
+        toolbar: [
+        {% if toolbar %}
+          {% if toolBarFull %}
+           // Row 1: Các công cụ định dạng văn bản
+          ['Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'Link', 'Unlink', 'Anchor'],
+          
+          // Row 2: Các công cụ chỉnh sửa và undo/redo
+          ['Source', '-', 'Undo', 'Redo', '-', 'RemoveFormat', 'Copy', 'Cut', 'Paste', '-', 'Find', 'Replace'],
+          
+          // Row 3: Các công cụ chỉnh sửa đoạn văn
+          ['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', '-', 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'],
+          
+          // Row 4: Các công cụ thêm bảng và các công cụ khác
+          ['InsertTable', 'Table', 'HorizontalRule', 'SpecialChar', '-', 'Blockquote', 'Code'],
+          
+          // Row 5: Các công cụ chèn hình ảnh, video và thêm liên kết
+          ['Image', 'Video', 'File', 'Table', 'Iframe'],
+          
+          // Row 6: Các công cụ thêm dấu, tạo bảng và tùy chỉnh hơn
+          ['Font', 'FontSize', 'TextColor', 'BGColor', 'Format', 'FontAwesome'],
+          
+          // Row 7: Các công cụ bảo mật (phần này có thể cần plugin tùy chỉnh)
+          ['Maximize', 'Minimize']
+          {% else %}
+            ['Bold', 'Italic', 'Underline', 'Link']
+          {% endif %}
+        {% else %}
+          []
+        {% endif %}
+        ],
+      extraPlugins: 'sourcearea,templates', 
+        height: {{ height }},
+        language: 'vi',
+         templates_files: [ CKEDITOR.getUrl(CKEDITOR.plugins.getPath('templates') + 'templates/default.js') ],
+      });
+
+    </script>
+  {% endif %}
+{% endmacro %}
