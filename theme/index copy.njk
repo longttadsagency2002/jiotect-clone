@@ -1,3 +1,5 @@
+{% import "macros/url.njk" as urlHelper %}
+
 <!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
@@ -18,9 +20,10 @@
   <header class="container my-4">
     <h1>{{ t[key].heading }}</h1>
     <nav>
- 
-      <a href="{{ i18nUrl('about', lang) }}">Giới thiệu</a>
-    <a href="{{ i18nUrl('login', lang) }}">Đăng nhập</a>
+      <a href="{{ urlHelper.i18nUrl('/login') }}">Login</a> |
+      <a href="{{ urlHelper.i18nUrl('/about') }}">About</a>
+      <a href="{{ i18nUrl('/about', lang) }}">Giới thiệu</a>
+<a href="{{ i18nUrl('/login', lang) }}">Đăng nhập</a>
 
     </nav>
   </header>

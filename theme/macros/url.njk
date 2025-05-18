@@ -1,0 +1,8 @@
+{# theme/macros/url.njk #}
+{% macro i18nUrl(path) %}
+  {% if lang == 'en' %}
+    /en{{ path }}
+  {% else %}
+    {{ path }}
+  {% endif %}
+{% endmacro %}
