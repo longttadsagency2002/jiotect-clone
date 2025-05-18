@@ -1,0 +1,24 @@
+{% macro langSwitcher(currentUrl, lang) %}
+  <div class="dropdown">
+    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="langDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+      {% if lang == 'en' %}
+        <i class="fi fi-us"></i> English
+      {% else %}
+        <i class="fi fi-vn"></i> Tiếng Việt
+      {% endif %}
+    </button>
+    <ul class="dropdown-menu" aria-labelledby="langDropdown">
+      <li>
+        <a class="dropdown-item {% if lang == 'vi' %}active{% endif %}" href="{{ toggleLangUrl(currentUrl, 'en') }}">
+          <i class="fi fi-vn"></i> Tiếng Việt
+        </a>
+      </li>
+      <li>
+        <a class="dropdown-item {% if lang == 'en' %}active{% endif %}" href="{{ toggleLangUrl(currentUrl, 'vi') }}">
+          <i class="fi fi-us"></i>
+           English
+        </a>
+      </li>
+    </ul>
+  </div>
+{% endmacro %}

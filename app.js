@@ -45,14 +45,16 @@ function registerRoutes(routeList, lang) {
     const contentView = `views/${key}/index.njk`;
     const absolutePath = path.join(__dirname, 'theme', contentView);
 
+
     // Đường dẫn có prefix (ví dụ /vi/dang-nhap)
     const prefixUrl = lang === 'vi' ? `/vi${url === '/' ? '' : url}` : url;
  
     // Route gốc
     app.get(url, (req, res) => {
       if (fs.existsSync(absolutePath)) {
+        const currentUrl = req.originalUrl;
         const layout = (key === 'login' || key === 'register') ? 'auth' : 'index';
-        res.render(layout, { lang, t, contentView, key });
+        res.render(layout, { lang, t, contentView, key, currentUrl });
       } else {
         res.status(404).render("404", { lang, t });
       }
@@ -61,9 +63,10 @@ function registerRoutes(routeList, lang) {
     // Nếu là tiếng Việt thì đăng ký thêm route có /vi prefix
     if (lang === 'vi') {
       app.get(prefixUrl, (req, res) => {
+        const currentUrl = req.originalUrl;
         if (fs.existsSync(absolutePath)) {
           const layout = (key === 'login' || key === 'register') ? 'auth' : 'index';
-          res.render(layout, { lang, t, contentView, key });
+          res.render(layout, { lang, t, contentView, key, currentUrl });
         } else {
           res.status(404).render("404", { lang, t });
         }
@@ -81,7 +84,7 @@ function registerRoutes(routeList, lang) {
         // Không có prefix
         app.get(childUrl, (req, res) => {
           if (fs.existsSync(childPath)) {
-            res.render("index", { lang, t, contentView: childView, key: childKey });
+            res.render("index", { lang, t, contentView: childView, key: childKey, currentUrl });
           } else {
             res.status(404).render("404", { lang, t });
           }
@@ -90,9 +93,10 @@ function registerRoutes(routeList, lang) {
         // Nếu là tiếng Việt, đăng ký thêm có prefix /vi
         if (lang === 'vi') {
           const childPrefixUrl = `/vi${childUrl === '/' ? '' : childUrl}`;
-          app.get(childPrefixUrl, (req, res) => {
+          app.get(childPrefixUrl, (req, res) => { 
+            const currentUrl = req.originalUrl;
             if (fs.existsSync(childPath)) {
-              res.render("index", { lang, t, contentView: childView, key: childKey });
+              res.render("index", { lang, t, contentView: childView, key: childKey, currentUrl });
             } else {
               res.status(404).render("404", { lang, t });
             }
@@ -106,6 +110,7 @@ function registerRoutes(routeList, lang) {
 
 registerRoutes(routeMap, 'vi');
 registerRoutes(routeMap, 'en');
+
 
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
