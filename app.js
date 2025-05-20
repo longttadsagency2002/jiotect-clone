@@ -191,6 +191,10 @@ registerRoutes(routeMap, 'vi');
 registerRoutes(routeMap, 'en');
 
 
+app.get('/cms', (req, res) => {
+  res.json({ status: 'OK' });
+});
+
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
     return next();
