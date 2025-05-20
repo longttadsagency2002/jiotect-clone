@@ -39,12 +39,14 @@ function getModulesLanguages(modulesDir) {
       result[moduleName] = langData;
     });
 
-    return JSON.stringify(result, null, 2);
+    // Trả về object, không stringify
+    return result;
 
   } catch (err) {
     console.error('Error reading modules directory:', err);
     return {};
   }
 }
+
 
 module.exports = { getModulesLanguages };

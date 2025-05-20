@@ -26,15 +26,48 @@ app.set('view engine', 'njk');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-const modules = getModulesLanguages( 'modules');
-// console.log('modules:', JSON.stringify(modules, null, 2));
+const modulesLanguage = getModulesLanguages( 'modules');
 
 // console.log("modules : ", modules);
 
-const translations = {
+let translations = {
   en: JSON.parse(fs.readFileSync(path.join(__dirname, 'languages/en.json'))),
   vi: JSON.parse(fs.readFileSync(path.join(__dirname, 'languages/vi.json')))
 };
+
+// console.log("translations : ",translations)
+// console.log("modulesLanguage : ", modulesLanguage)
+
+function mergeModulesToTranslations(modulesLanguage, translations) {
+  const merged = JSON.parse(JSON.stringify(translations));
+
+  ['en', 'vi'].forEach(lang => {
+    if (!merged[lang]) merged[lang] = {};
+
+    for (const moduleKey in modulesLanguage) {
+      const langData = modulesLanguage[moduleKey]?.[lang];
+      if (langData && Object.keys(langData).length > 0) {
+        const innerKey = Object.keys(langData)[0];
+        const content = langData[innerKey];
+
+        if (!merged[lang][moduleKey]) {
+          merged[lang][moduleKey] = {};
+        }
+
+        merged[lang][moduleKey] = {
+          ...merged[lang][moduleKey],
+          ...content
+        };
+      }
+    }
+  });
+
+  return merged;
+}
+
+
+translations = mergeModulesToTranslations(modulesLanguage, translations);
+// console.log("translations : ", translations);
 
 async function callControllerAction(req, res, lang, t, moduleName, controllerName, actionName) {
   try {
@@ -72,37 +105,33 @@ function registerRoutes(routeList, lang) {
       let controllerName = route.controller;
       let actionName = route.action;
 
-      console.log('moduleName:', moduleName);
-      console.log('controllerName:', controllerName);
-      console.log('actionName:', actionName);
       let result;
+      let resultChild;
       if (moduleName && controllerName && actionName) {
         result = await callControllerAction(req, res, lang, t, moduleName, controllerName, actionName);
       } 
-      console.log(result)
+
       if (fs.existsSync(absolutePath)) {
         const currentUrl = req.originalUrl;
         const layout = (key === 'login' || key === 'register') ? 'auth' : 'index';
-        res.render(layout, { lang, t, contentView, key, currentUrl });
+        res.render(layout, { lang, t, contentView, key, currentUrl,data: result });
       } else {
         res.status(404).render("404", { lang, t });
       }
     });
 
-    // Nếu là tiếng Việt thì đăng ký thêm route có /vi prefix
     if (lang === 'vi') {
       app.get(prefixUrl, (req, res) => {
         const currentUrl = req.originalUrl;
         if (fs.existsSync(absolutePath)) {
           const layout = (key === 'login' || key === 'register') ? 'auth' : 'index';
-          res.render(layout, { lang, t, contentView, key, currentUrl });
+          res.render(layout, { lang, t, contentView, key, currentUrl, data: result });
         } else {
           res.status(404).render("404", { lang, t });
         }
       });
     }
 
-    // Xử lý children như cũ, bạn cũng có thể đăng ký cả 2 dạng tương tự nếu muốn
     if (route.children && route.children.length > 0) {
       route.children.forEach(child => {
         const childUrl = child.paths[lang];
@@ -110,22 +139,24 @@ function registerRoutes(routeList, lang) {
         const childView = `views/${key}/${childKey}/index.njk`;
         const childPath = path.join(__dirname, 'theme', childView);
 
-        // Không có prefix
+        if( child.controller && child.action && child.moduleName)  {
+          resultChild = callControllerAction(req, res, lang, t, child.moduleName, child.controller, child.action);
+        }
+
         app.get(childUrl, (req, res) => {
           if (fs.existsSync(childPath)) {
-            res.render("index", { lang, t, contentView: childView, key: childKey, currentUrl });
+            res.render("index", { lang, t, contentView: childView, key: childKey, currentUrl, data: resultChild });
           } else {
             res.status(404).render("404", { lang, t });
           }
         });
 
-        // Nếu là tiếng Việt, đăng ký thêm có prefix /vi
         if (lang === 'vi') {
           const childPrefixUrl = `/vi${childUrl === '/' ? '' : childUrl}`;
           app.get(childPrefixUrl, (req, res) => { 
             const currentUrl = req.originalUrl;
             if (fs.existsSync(childPath)) {
-              res.render("index", { lang, t, contentView: childView, key: childKey, currentUrl });
+              res.render("index", { lang, t, contentView: childView, key: childKey, currentUrl, data: resultChild });
             } else {
               res.status(404).render("404", { lang, t });
             }
