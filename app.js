@@ -12,13 +12,27 @@ const app = express();
 const port = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, 'public')));
 
-const viewsPath = path.join(__dirname, 'theme');
+// const viewsPath = path.join(__dirname, 'theme');
 
-const env = nunjucks.configure(viewsPath, {
+// const env = nunjucks.configure(viewsPath, {
+//   autoescape: true,
+//   express: app,
+//   noCache: true
+// });
+
+const viewsPaths = [
+  path.join(__dirname, 'theme'),
+  path.join(__dirname, 'modules/module1/views'),
+  path.join(__dirname, 'modules/module2/views'),
+  path.join(__dirname, 'common/views')
+];
+
+const env = nunjucks.configure(viewsPaths, {
   autoescape: true,
   express: app,
   noCache: true
 });
+
 registerNunjucksGlobals(env);
 
 app.set('view engine', 'njk');
@@ -95,77 +109,82 @@ function registerRoutes(routeList, lang) {
     const contentView = `views/${key}/index.njk`;
     const absolutePath = path.join(__dirname, 'theme', contentView);
 
-
     // Đường dẫn có prefix (ví dụ /vi/dang-nhap)
     const prefixUrl = lang === 'vi' ? `/vi${url === '/' ? '' : url}` : url;
- 
-    // Route gốc
-    app.get(url, async (req, res) => {
+
+    // Hàm xử lý chung cho route chính và prefix
+    async function handleRequest(req, res) {
       let moduleName = key;
       let controllerName = route.controller;
       let actionName = route.action;
 
       let result;
-      let resultChild;
-      if (moduleName && controllerName && actionName) {
-        result = await callControllerAction(req, res, lang, t, moduleName, controllerName, actionName);
-      } 
+      try {
+        if (moduleName && controllerName && actionName) {
+          result = await callControllerAction(req, res, lang, t, moduleName, controllerName, actionName);
+        }
+      } catch (error) {
+        console.error(error);
+        return res.status(500).send('Internal Server Error');
+      }
 
       if (fs.existsSync(absolutePath)) {
         const currentUrl = req.originalUrl;
         const layout = (key === 'login' || key === 'register') ? 'auth' : 'index';
-        res.render(layout, { lang, t, contentView, key, currentUrl,data: result });
+        res.render(layout, { lang, t, contentView, key, currentUrl, data: result });
       } else {
-        res.status(404).render("404", { lang, t });
+        res.status(404).render('404', { lang, t });
       }
-    });
-
-    if (lang === 'vi') {
-      app.get(prefixUrl, (req, res) => {
-        const currentUrl = req.originalUrl;
-        if (fs.existsSync(absolutePath)) {
-          const layout = (key === 'login' || key === 'register') ? 'auth' : 'index';
-          res.render(layout, { lang, t, contentView, key, currentUrl, data: result });
-        } else {
-          res.status(404).render("404", { lang, t });
-        }
-      });
     }
 
+    // Đăng ký route chính
+    app.get(url, handleRequest);
+
+    // Nếu là tiếng Việt, đăng ký thêm route có prefix /vi
+    if (lang === 'vi' && prefixUrl !== url) {
+      app.get(prefixUrl, handleRequest);
+    }
+
+    // Xử lý route con (children)
     if (route.children && route.children.length > 0) {
       route.children.forEach(child => {
         const childUrl = child.paths[lang];
         const childKey = child.key;
         const childView = `views/${key}/${childKey}/index.njk`;
         const childPath = path.join(__dirname, 'theme', childView);
+        const childPrefixUrl = lang === 'vi' ? `/vi${childUrl === '/' ? '' : childUrl}` : childUrl;
 
-        if( child.controller && child.action && child.moduleName)  {
-          resultChild = callControllerAction(req, res, lang, t, child.moduleName, child.controller, child.action);
+        async function handleChildRequest(req, res) {
+          let resultChild;
+          try {
+            if (child.moduleName && child.controller && child.action) {
+              resultChild = await callControllerAction(req, res, lang, t, child.moduleName, child.controller, child.action);
+            }
+          } catch (error) {
+            console.error(error);
+            return res.status(500).send('Internal Server Error');
+          }
+
+          if (fs.existsSync(childPath)) {
+            const currentUrl = req.originalUrl;
+            res.render('index', { lang, t, contentView: childView, key: childKey, currentUrl, data: resultChild });
+          } else {
+            res.status(404).render('404', { lang, t });
+          }
         }
 
-        app.get(childUrl, (req, res) => {
-          if (fs.existsSync(childPath)) {
-            res.render("index", { lang, t, contentView: childView, key: childKey, currentUrl, data: resultChild });
-          } else {
-            res.status(404).render("404", { lang, t });
-          }
-        });
+        // Đăng ký route con chính
+        app.get(childUrl, handleChildRequest);
 
-        if (lang === 'vi') {
-          const childPrefixUrl = `/vi${childUrl === '/' ? '' : childUrl}`;
-          app.get(childPrefixUrl, (req, res) => { 
-            const currentUrl = req.originalUrl;
-            if (fs.existsSync(childPath)) {
-              res.render("index", { lang, t, contentView: childView, key: childKey, currentUrl, data: resultChild });
-            } else {
-              res.status(404).render("404", { lang, t });
-            }
-          });
+        // Nếu tiếng Việt, đăng ký thêm route con có prefix /vi
+        if (lang === 'vi' && childPrefixUrl !== childUrl) {
+          app.get(childPrefixUrl, handleChildRequest);
         }
       });
     }
   });
 }
+
 
 
 registerRoutes(routeMap, 'vi');

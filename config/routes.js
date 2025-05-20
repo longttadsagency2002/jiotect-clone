@@ -39,7 +39,7 @@ module.exports.routeMap = [
   },
   {
     key: 'shipplan',
-    controller: 'ShipPlanController',
+    controller: '',
     action: 'index',
     paths: {
       vi: '/ke-hoach-tau',
@@ -48,7 +48,7 @@ module.exports.routeMap = [
     children: [
       {
         key: 'detail',
-        controller: 'ShipPlanController',
+        controller: '',
         action: 'detail',
         paths: {
           vi: '/ke-hoach-tau/chi-tiet',

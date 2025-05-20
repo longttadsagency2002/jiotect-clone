@@ -1,0 +1,10 @@
+{
+  "key": "chat",
+  "paths": {
+    "vi": "/",
+    "en": "/en"
+  },
+  "controller": "chat",
+  "action": "index",
+  "dir":"modules"
+}
