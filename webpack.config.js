@@ -22,7 +22,10 @@ module.exports = {
             '**/*.log',
             '**/webpack.config.js',
             '**/package-lock.json',
-            '**/app.js'
+            '**/app.js',
+            '**/README.md',
+            '**/docs',
+            '**/.idea',
           ]
         }}
       ],
