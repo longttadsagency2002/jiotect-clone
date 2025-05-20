@@ -1,38 +1,26 @@
-// module.exports.routeMap = {
-//   vi: {
-//     index: '/',
-//     login: '/dang-nhap',
-//     register: '/dang-ky',
-//     about: '/gioi-thieu',
-//     shipplan: '/ke-hoach-tau'
-//   },
-//   en: {
-//     index: '/en',
-//     login: '/en/login',
-//     register: '/en/register',
-//     about: '/en/about',
-//     shipplan: '/en/shipplan'
-//   }
-// };
-
-
 module.exports.routeMap = [
   {
     key: 'index',
     paths: {
       vi: '/',
       en: '/en'
-    }
+    },
+    controller: 'IndexController',
+    action: 'index',
   },
   {
     key: 'login',
     paths: {
       vi: '/dang-nhap',
       en: '/en/login'
-    }
+    },
+    controller: 'AuthController',
+    action: 'login',
   },
   {
     key: 'about',
+    controller: 'AboutController',
+    action: 'index',
     paths: {
       vi: '/gioi-thieu',
       en: '/en/about'
@@ -40,6 +28,8 @@ module.exports.routeMap = [
     children: [
       {
         key: 'company',
+        controller: 'AboutController',
+        action: 'company',
         paths: {
           vi: '/gioi-thieu/cong-ty',
           en: '/en/about/company'
@@ -49,6 +39,8 @@ module.exports.routeMap = [
   },
   {
     key: 'shipplan',
+    controller: 'ShipPlanController',
+    action: 'index',
     paths: {
       vi: '/ke-hoach-tau',
       en: '/en/shipplan'
@@ -56,6 +48,8 @@ module.exports.routeMap = [
     children: [
       {
         key: 'detail',
+        controller: 'ShipPlanController',
+        action: 'detail',
         paths: {
           vi: '/ke-hoach-tau/chi-tiet',
           en: '/en/shipplan/detail'
@@ -65,6 +59,8 @@ module.exports.routeMap = [
   },
   {
     key: 'register',
+    controller: 'AuthController',
+    action: 'register',
     paths: {
       vi: '/dang-ky',
       en: '/en/register'

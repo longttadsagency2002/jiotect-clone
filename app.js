@@ -36,6 +36,23 @@ const translations = {
   vi: JSON.parse(fs.readFileSync(path.join(__dirname, 'languages/vi.json')))
 };
 
+async function callControllerAction(req, res, lang, t, moduleName, controllerName, actionName) {
+  try {
+    const controllerPath = path.join(__dirname, 'modules', moduleName, 'controllers', controllerName);
+    const controller = require(controllerPath);
+
+    if (controller && typeof controller[actionName] === 'function') {
+      const result = await controller[actionName](req, res, lang, t);
+      return result;
+    } else {
+      throw new Error(`Action ${actionName} không tồn tại trong ${controllerName}`);
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
 function registerRoutes(routeList, lang) {
   const t = translations[lang];
 
@@ -50,7 +67,19 @@ function registerRoutes(routeList, lang) {
     const prefixUrl = lang === 'vi' ? `/vi${url === '/' ? '' : url}` : url;
  
     // Route gốc
-    app.get(url, (req, res) => {
+    app.get(url, async (req, res) => {
+      let moduleName = key;
+      let controllerName = route.controller;
+      let actionName = route.action;
+
+      console.log('moduleName:', moduleName);
+      console.log('controllerName:', controllerName);
+      console.log('actionName:', actionName);
+      let result;
+      if (moduleName && controllerName && actionName) {
+        result = await callControllerAction(req, res, lang, t, moduleName, controllerName, actionName);
+      } 
+      console.log(result)
       if (fs.existsSync(absolutePath)) {
         const currentUrl = req.originalUrl;
         const layout = (key === 'login' || key === 'register') ? 'auth' : 'index';
