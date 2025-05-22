@@ -1,6 +1,5 @@
 const express = require("express");
 const nunjucks = require("nunjucks");
-const { Sequelize } = require("sequelize");
 const webRoutes = require("./routes");
 const cookieParser = require('cookie-parser');
 const { routeMap } = require("./config/routes");
@@ -339,17 +338,6 @@ app.use((req, res, next) => {
 
 app.use("/", webRoutes);
 
-const sequelize = new Sequelize(process.env.DATABASE_URL, {
-  dialect: "postgres",
-  dialectOptions: {
-    ssl: true,
-  },
-});
-
-sequelize
-  .authenticate()
-  .then(() => console.log("Database connected"))
-  .catch((err) => console.error("Database error:", err));
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
