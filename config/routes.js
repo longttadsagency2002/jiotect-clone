@@ -14,7 +14,7 @@ module.exports.routeMap = [
       vi: '/dang-nhap',
       en: '/en/login'
     },
-    controller: 'AuthController',
+    controller: '',
     action: 'login',
   },
   {

@@ -9,12 +9,12 @@
     </button>
     <ul class="dropdown-menu" aria-labelledby="langDropdown">
       <li>
-        <a class="dropdown-item {% if lang == 'vi' %}active{% endif %}" href="{{ toggleLangUrl(currentUrl, 'en') }}">
+        <a rel="alternate" hreflang="vi" class="dropdown-item {% if lang == 'vi' %}active{% endif %}" href="{{ toggleLangUrl(currentUrl, 'en') }}">
           <i class="fi fi-vn"></i> Tiếng Việt
         </a>
       </li>
       <li>
-        <a class="dropdown-item {% if lang == 'en' %}active{% endif %}" href="{{ toggleLangUrl(currentUrl, 'vi') }}">
+        <a rel="alternate" hreflang="en" class="dropdown-item {% if lang == 'en' %}active{% endif %}" href="{{ toggleLangUrl(currentUrl, 'vi') }}">
           <i class="fi fi-us"></i>
            English
         </a>

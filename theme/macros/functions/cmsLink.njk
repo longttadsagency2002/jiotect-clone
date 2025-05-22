@@ -1,0 +1,7 @@
+{% macro cmsLink(page, text, className='', id='') %}
+  <a href="/cms/{{ page }}" 
+     class="{{ className }}" 
+     id="{{ id }}">
+    {{ text }}
+  </a>
+{% endmacro %}

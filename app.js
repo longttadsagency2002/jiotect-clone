@@ -2,19 +2,31 @@ const express = require("express");
 const nunjucks = require("nunjucks");
 const { Sequelize } = require("sequelize");
 const webRoutes = require("./routes");
+const cookieParser = require('cookie-parser');
 const { routeMap } = require("./config/routes");
 const axios = require('axios');
 const fs = require("fs");
 const path = require("path");
 const { resolveUrlHandler } = require('./utils/url/resolveUrl.js');
 const { getModulesLanguages } = require("./utils/moduleScanner");
+const authenticateToken = require("./middlewares/authenticateToken");
+const authorizeRoles = require('./middlewares/authorizeRoles');
+
 require("dotenv").config();
 const { registerNunjucksGlobals } = require("./services/nunjucksHelpers");
+const jwt = require('jsonwebtoken');
 
 const app = express();
+app.use(express.json());
+app.use(cookieParser());
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const port = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, "public")));
-
+const modulesLanguage = getModulesLanguages("modules");
+const moduleNames = Object.keys(modulesLanguage);
+moduleNames.forEach(mod => {
+  app.use(`/modules/${mod}/web`, express.static(`modules/${mod}/web`));
+});
 // const viewsPath = path.join(__dirname, 'theme');
 
 // const env = nunjucks.configure(viewsPath, {
@@ -41,7 +53,7 @@ app.set("view engine", "njk");
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-const modulesLanguage = getModulesLanguages("modules");
+// const modulesLanguage = getModulesLanguages("modules");
 
 // console.log("modules : ", modules);
 
@@ -111,7 +123,8 @@ async function callControllerAction(
       );
     }
   } catch (error) {
-    console.error(error);
+    console.error("Lôĩ xảy ra khi gọi action:", error);
+    // console.warn(error);
     throw error;
   }
 }
@@ -136,11 +149,11 @@ function registerRoutes(routeList, lang) {
       "views/front-end",
       `index.njk`
     );
-    console.log("route.key : ", route.key);
-    console.log("absolutePath : ", absolutePath);
-    console.log("moduleFrontEndViewPath : ", moduleFrontEndViewPath);
+    // console.log("route.key : ", route.key);
+    // console.log("absolutePath : ", absolutePath);
+    // console.log("moduleFrontEndViewPath : ", moduleFrontEndViewPath);
 
-    console.log("-----------", fs.existsSync(moduleFrontEndViewPath));
+    // console.log("-----------", fs.existsSync(moduleFrontEndViewPath));
 
     // Đường dẫn có prefix (ví dụ /vi/dang-nhap)
     const prefixUrl = lang === "vi" ? `/vi${url === "/" ? "" : url}` : url;
@@ -165,7 +178,7 @@ function registerRoutes(routeList, lang) {
           );
         }
       } catch (error) {
-        console.error(error);
+        // console.error(error);
         return res.status(500).send("Internal Server Error");
       }
 
@@ -266,8 +279,35 @@ function registerRoutes(routeList, lang) {
 registerRoutes(routeMap, "vi");
 registerRoutes(routeMap, "en");
 
-app.get("/cms", (req, res) => {
-  res.json({ status: "OK" });
+app.post('/login-test', (req, res) => {
+  // Giả lập user (bình thường phải check DB)
+  const user = {
+    id: 1,
+    username: 'admin',
+    role: 'admin'
+  };
+
+  // Tạo token
+  const token = jwt.sign(user, JWT_SECRET, { expiresIn: '1h' });
+
+  // Set cookie httpOnly
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',  // Chỉ bật secure khi production
+    sameSite: 'Strict',
+    maxAge: 60 * 60 * 1000 // 1 giờ
+  });
+
+  // Trả response
+  res.json({
+    message: 'Đăng nhập thành công!',
+    token // cho dev test thôi, production thì không gửi
+  });
+});
+
+
+app.get('/cms', authenticateToken, authorizeRoles('admin'), (req, res) => {
+  res.render("admin",)
 });
 
 app.get("/test", (req, res) => {
