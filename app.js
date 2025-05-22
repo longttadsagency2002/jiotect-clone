@@ -59,6 +59,7 @@ let translations = {
 // console.log("translations : ",translations)
 // console.log("modulesLanguage : ", modulesLanguage)
 
+
 function mergeModulesToTranslations(modulesLanguage, translations) {
   const merged = JSON.parse(JSON.stringify(translations));
 
