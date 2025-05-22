@@ -7,6 +7,7 @@ const { routeMap } = require("./config/routes");
 const axios = require('axios');
 const fs = require("fs");
 const path = require("path");
+const useragent = require('useragent');
 const { resolveUrlHandler } = require('./utils/url/resolveUrl.js');
 const { getModulesLanguages } = require("./utils/moduleScanner");
 const authenticateToken = require("./middlewares/authenticateToken");
@@ -27,13 +28,6 @@ const moduleNames = Object.keys(modulesLanguage);
 moduleNames.forEach(mod => {
   app.use(`/modules/${mod}/web`, express.static(`modules/${mod}/web`));
 });
-// const viewsPath = path.join(__dirname, 'theme');
-
-// const env = nunjucks.configure(viewsPath, {
-//   autoescape: true,
-//   express: app,
-//   noCache: true
-// });
 
 const viewsPaths = [
   path.join(__dirname, "theme"),
@@ -264,10 +258,8 @@ function registerRoutes(routeList, lang) {
           }
         }
 
-        // Đăng ký route con chính
         app.get(childUrl, handleChildRequest);
 
-        // Nếu tiếng Việt, đăng ký thêm route con có prefix /vi
         if (lang === "vi" && childPrefixUrl !== childUrl) {
           app.get(childPrefixUrl, handleChildRequest);
         }
@@ -313,6 +305,28 @@ app.get("/test", (req, res) => {
 });
 
 app.use((req, res, next) => {
+ // Lấy IP (đã setup trust proxy nếu cần)
+ const ip = req.ip || req.connection.remoteAddress;
+
+ // Lấy chuỗi user-agent
+ const uaString = req.headers['user-agent'] || '';
+
+ // Phân tích user-agent
+ const agent = useragent.parse(uaString);
+
+ // Lấy các thông tin chi tiết
+ const browser = agent.toAgent();          // ví dụ: "Chrome 115.0.0"
+ const os = agent.os.toString();            // ví dụ: "Windows 10"
+ const device = agent.device.toString();    // ví dụ: "Other 0.0.0"
+
+ // Log ra console (hoặc thay bằng lưu DB)
+ console.log('--- Client Info ---');
+ console.log('IP:', ip);
+ console.log('Browser:', browser);
+ console.log('OS:', os);
+ console.log('Device:', device);
+ console.log('User-Agent:', uaString);
+ console.log('-------------------');
   if (req.path.startsWith("/api/")) {
     return next();
   }
