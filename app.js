@@ -280,28 +280,21 @@ registerRoutes(routeMap, "vi");
 registerRoutes(routeMap, "en");
 
 app.post('/login-test', (req, res) => {
-  // Giả lập user (bình thường phải check DB)
   const user = {
     id: 1,
     username: 'admin',
     role: 'admin'
   };
-
-  // Tạo token
   const token = jwt.sign(user, JWT_SECRET, { expiresIn: '1h' });
-
-  // Set cookie httpOnly
   res.cookie('token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',  // Chỉ bật secure khi production
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'Strict',
-    maxAge: 60 * 60 * 1000 // 1 giờ
+    maxAge: 60 * 60 * 1000 
   });
-
-  // Trả response
   res.json({
     message: 'Đăng nhập thành công!',
-    token // cho dev test thôi, production thì không gửi
+    token 
   });
 });
 
@@ -331,7 +324,6 @@ app.use((req, res, next) => {
 
 app.use("/", webRoutes);
 
-// Connect DB
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: "postgres",
   dialectOptions: {
