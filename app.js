@@ -1,16 +1,19 @@
-const express = require('express');
-const nunjucks = require('nunjucks');
-const { Sequelize } = require('sequelize');
-const webRoutes = require('./routes');
-const { routeMap } = require('./config/routes');
-const fs = require('fs');
-const path = require('path');
-const { getModulesLanguages } = require('./utils/moduleScanner');
-require('dotenv').config();const { registerNunjucksGlobals } = require('./services/nunjucksHelpers');
+const express = require("express");
+const nunjucks = require("nunjucks");
+const { Sequelize } = require("sequelize");
+const webRoutes = require("./routes");
+const { routeMap } = require("./config/routes");
+const axios = require('axios');
+const fs = require("fs");
+const path = require("path");
+const { resolveUrlHandler } = require('./utils/url/resolveUrl.js');
+const { getModulesLanguages } = require("./utils/moduleScanner");
+require("dotenv").config();
+const { registerNunjucksGlobals } = require("./services/nunjucksHelpers");
 
 const app = express();
 const port = process.env.PORT || 3000;
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
 // const viewsPath = path.join(__dirname, 'theme');
 
@@ -21,32 +24,30 @@ app.use(express.static(path.join(__dirname, 'public')));
 // });
 
 const viewsPaths = [
-  path.join(__dirname, 'theme'),
-  path.join(__dirname, 'modules/module1/views'),
-  path.join(__dirname, 'modules/module2/views'),
-  path.join(__dirname, 'common/views')
+  path.join(__dirname, "theme"),
+  path.join(__dirname, "modules"),
 ];
 
 const env = nunjucks.configure(viewsPaths, {
   autoescape: true,
   express: app,
-  noCache: true
+  noCache: true,
 });
 
 registerNunjucksGlobals(env);
 
-app.set('view engine', 'njk');
+app.set("view engine", "njk");
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-const modulesLanguage = getModulesLanguages( 'modules');
+const modulesLanguage = getModulesLanguages("modules");
 
 // console.log("modules : ", modules);
 
 let translations = {
-  en: JSON.parse(fs.readFileSync(path.join(__dirname, 'languages/en.json'))),
-  vi: JSON.parse(fs.readFileSync(path.join(__dirname, 'languages/vi.json')))
+  en: JSON.parse(fs.readFileSync(path.join(__dirname, "languages/en.json"))),
+  vi: JSON.parse(fs.readFileSync(path.join(__dirname, "languages/vi.json"))),
 };
 
 // console.log("translations : ",translations)
@@ -55,7 +56,7 @@ let translations = {
 function mergeModulesToTranslations(modulesLanguage, translations) {
   const merged = JSON.parse(JSON.stringify(translations));
 
-  ['en', 'vi'].forEach(lang => {
+  ["en", "vi"].forEach((lang) => {
     if (!merged[lang]) merged[lang] = {};
 
     for (const moduleKey in modulesLanguage) {
@@ -70,7 +71,7 @@ function mergeModulesToTranslations(modulesLanguage, translations) {
 
         merged[lang][moduleKey] = {
           ...merged[lang][moduleKey],
-          ...content
+          ...content,
         };
       }
     }
@@ -79,20 +80,35 @@ function mergeModulesToTranslations(modulesLanguage, translations) {
   return merged;
 }
 
-
 translations = mergeModulesToTranslations(modulesLanguage, translations);
 // console.log("translations : ", translations);
 
-async function callControllerAction(req, res, lang, t, moduleName, controllerName, actionName) {
+async function callControllerAction(
+  req,
+  res,
+  lang,
+  t,
+  moduleName,
+  controllerName,
+  actionName
+) {
   try {
-    const controllerPath = path.join(__dirname, 'modules', moduleName, 'controllers', controllerName);
+    const controllerPath = path.join(
+      __dirname,
+      "modules",
+      moduleName,
+      "controllers",
+      controllerName
+    );
     const controller = require(controllerPath);
 
-    if (controller && typeof controller[actionName] === 'function') {
+    if (controller && typeof controller[actionName] === "function") {
       const result = await controller[actionName](req, res, lang, t);
       return result;
     } else {
-      throw new Error(`Action ${actionName} không tồn tại trong ${controllerName}`);
+      throw new Error(
+        `Action ${actionName} không tồn tại trong ${controllerName}`
+      );
     }
   } catch (error) {
     console.error(error);
@@ -100,17 +116,34 @@ async function callControllerAction(req, res, lang, t, moduleName, controllerNam
   }
 }
 
+app.get('/resolve-url',resolveUrlHandler);
+
+
 function registerRoutes(routeList, lang) {
   const t = translations[lang];
 
-  routeList.forEach(route => {
+  routeList.forEach((route) => {
     const url = route.paths[lang];
     const key = route.key;
+    let isDir = route.dir ? true : false;
     const contentView = `views/${key}/index.njk`;
-    const absolutePath = path.join(__dirname, 'theme', contentView);
+    const absolutePath = path.join(__dirname, "theme", contentView);
+
+    let moduleFrontEndViewPath = path.join(
+      __dirname,
+      `modules`,
+      key,
+      "views/front-end",
+      `index.njk`
+    );
+    console.log("route.key : ", route.key);
+    console.log("absolutePath : ", absolutePath);
+    console.log("moduleFrontEndViewPath : ", moduleFrontEndViewPath);
+
+    console.log("-----------", fs.existsSync(moduleFrontEndViewPath));
 
     // Đường dẫn có prefix (ví dụ /vi/dang-nhap)
-    const prefixUrl = lang === 'vi' ? `/vi${url === '/' ? '' : url}` : url;
+    const prefixUrl = lang === "vi" ? `/vi${url === "/" ? "" : url}` : url;
 
     // Hàm xử lý chung cho route chính và prefix
     async function handleRequest(req, res) {
@@ -121,19 +154,48 @@ function registerRoutes(routeList, lang) {
       let result;
       try {
         if (moduleName && controllerName && actionName) {
-          result = await callControllerAction(req, res, lang, t, moduleName, controllerName, actionName);
+          result = await callControllerAction(
+            req,
+            res,
+            lang,
+            t,
+            moduleName,
+            controllerName,
+            actionName
+          );
         }
       } catch (error) {
         console.error(error);
-        return res.status(500).send('Internal Server Error');
+        return res.status(500).send("Internal Server Error");
       }
 
-      if (fs.existsSync(absolutePath)) {
+      if (
+        fs.existsSync(absolutePath) ||
+        (isDir && fs.existsSync(moduleFrontEndViewPath))
+      ) {
         const currentUrl = req.originalUrl;
-        const layout = (key === 'login' || key === 'register') ? 'auth' : 'index';
-        res.render(layout, { lang, t, contentView, key, currentUrl, data: result });
+        const layout = key === "login" || key === "register" ? "auth" : "index";
+        if (isDir) {
+          res.render(layout, {
+            lang,
+            t,
+            contentView: moduleFrontEndViewPath,
+            key,
+            currentUrl,
+            data: result,
+          });
+        } else {
+          res.render(layout, {
+            lang,
+            t,
+            contentView,
+            key,
+            currentUrl,
+            data: result,
+          });
+        }
       } else {
-        res.status(404).render('404', { lang, t });
+        res.status(404).render("404", { lang, t });
       }
     }
 
@@ -141,35 +203,51 @@ function registerRoutes(routeList, lang) {
     app.get(url, handleRequest);
 
     // Nếu là tiếng Việt, đăng ký thêm route có prefix /vi
-    if (lang === 'vi' && prefixUrl !== url) {
+    if (lang === "vi" && prefixUrl !== url) {
       app.get(prefixUrl, handleRequest);
     }
 
     // Xử lý route con (children)
     if (route.children && route.children.length > 0) {
-      route.children.forEach(child => {
+      route.children.forEach((child) => {
         const childUrl = child.paths[lang];
         const childKey = child.key;
         const childView = `views/${key}/${childKey}/index.njk`;
-        const childPath = path.join(__dirname, 'theme', childView);
-        const childPrefixUrl = lang === 'vi' ? `/vi${childUrl === '/' ? '' : childUrl}` : childUrl;
+        const childPath = path.join(__dirname, "theme", childView);
+        const childPrefixUrl =
+          lang === "vi" ? `/vi${childUrl === "/" ? "" : childUrl}` : childUrl;
 
         async function handleChildRequest(req, res) {
           let resultChild;
           try {
             if (child.moduleName && child.controller && child.action) {
-              resultChild = await callControllerAction(req, res, lang, t, child.moduleName, child.controller, child.action);
+              resultChild = await callControllerAction(
+                req,
+                res,
+                lang,
+                t,
+                child.moduleName,
+                child.controller,
+                child.action
+              );
             }
           } catch (error) {
             console.error(error);
-            return res.status(500).send('Internal Server Error');
+            return res.status(500).send("Internal Server Error");
           }
 
           if (fs.existsSync(childPath)) {
             const currentUrl = req.originalUrl;
-            res.render('index', { lang, t, contentView: childView, key: childKey, currentUrl, data: resultChild });
+            res.render("index", {
+              lang,
+              t,
+              contentView: childView,
+              key: childKey,
+              currentUrl,
+              data: resultChild,
+            });
           } else {
-            res.status(404).render('404', { lang, t });
+            res.status(404).render("404", { lang, t });
           }
         }
 
@@ -177,7 +255,7 @@ function registerRoutes(routeList, lang) {
         app.get(childUrl, handleChildRequest);
 
         // Nếu tiếng Việt, đăng ký thêm route con có prefix /vi
-        if (lang === 'vi' && childPrefixUrl !== childUrl) {
+        if (lang === "vi" && childPrefixUrl !== childUrl) {
           app.get(childPrefixUrl, handleChildRequest);
         }
       });
@@ -185,39 +263,46 @@ function registerRoutes(routeList, lang) {
   });
 }
 
+registerRoutes(routeMap, "vi");
+registerRoutes(routeMap, "en");
 
+app.get("/cms", (req, res) => {
+  res.json({ status: "OK" });
+});
 
-registerRoutes(routeMap, 'vi');
-registerRoutes(routeMap, 'en');
-
-
-app.get('/cms', (req, res) => {
-  res.json({ status: 'OK' });
+app.get("/test", (req, res) => {
+  res.render("index", {
+    lang: "en",
+    t: translations.en,
+    contentView: "chat/views/front-end/index.njk",
+    key: "test",
+  });
 });
 
 app.use((req, res, next) => {
-  if (req.path.startsWith('/api/')) {
+  if (req.path.startsWith("/api/")) {
     return next();
   }
-  const lang = req.path.startsWith('/en') ? 'en' : 'vi';
-  const t = lang === 'en' ? translations.en : translations.vi;
-  res.status(404).render('404', { lang, t });
+  const lang = req.path.startsWith("/en") ? "en" : "vi";
+  const t = lang === "en" ? translations.en : translations.vi;
+  res.status(404).render("404", { lang, t });
 });
 
 
-app.use('/', webRoutes);
+app.use("/", webRoutes);
 
 // Connect DB
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
-  dialect: 'postgres',
+  dialect: "postgres",
   dialectOptions: {
-    ssl: true
-  }
+    ssl: true,
+  },
 });
 
-sequelize.authenticate()
-  .then(() => console.log('Database connected'))
-  .catch(err => console.error('Database error:', err));
+sequelize
+  .authenticate()
+  .then(() => console.log("Database connected"))
+  .catch((err) => console.error("Database error:", err));
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);

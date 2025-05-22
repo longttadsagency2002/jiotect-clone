@@ -68,5 +68,15 @@ module.exports.routeMap = [
     children: [
      
     ]
+  },
+  {
+    key: "chat",
+    paths: {
+      vi: "/tin-nhan",
+      en: "/en/chat"
+    },
+    controller: "",
+    action: "index",
+    dir:"modules"
   }
 ];

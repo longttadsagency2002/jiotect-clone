@@ -1,8 +1,8 @@
 {
   "key": "chat",
   "paths": {
-    "vi": "/",
-    "en": "/en"
+    "vi": "/tin-nhan",
+    "en": "/en/chat"
   },
   "controller": "chat",
   "action": "index",
